@@ -1,7 +1,9 @@
 import time
 from selenium import webdriver
 from tkinter import Tk, Button, Label, filedialog
+import openpyxl
 from selenium.webdriver.common.by import By
+from selenium.webdriver.ie.webdriver import WebDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -54,15 +56,46 @@ def iniciar():
             EC.element_to_be_clickable((By.XPATH, xpath_search))
         )
 
-        search_element.click()
+        wb = openpyxl.load_workbook(caminho_arquivo)
+        sheet = wb.active  # Seleciona a primeira aba ativa
 
-        search_element.send_keys()
+        # Inicializa as listas
+        dados = []
+        conteudo_fixo = None
+
+        for row in sheet.iter_rows(min_row=2, max_col=4, values_only=True):
+            nome, numero, conteudo, conteudo_d = row
+
+            # Verifica o conteúdo da coluna D (se D2 estiver preenchido, define conteudo_fixo)
+            if conteudo_d and conteudo_fixo is None:
+                conteudo_fixo = str(conteudo_d)
+
+            # Cria tuplas de acordo com a condição da coluna D
+            if conteudo_fixo:
+                # Se houver conteúdo fixo, cria tuplas (nome, número)
+                if nome is not None and numero is not None:
+                    dados.append((nome, numero))
+            else:
+                # Se não houver conteúdo fixo, cria tuplas (nome, número, conteúdo)
+                if nome is not None and numero is not None and conteudo is not None:
+                    dados.append((nome, numero, conteudo))
+
+
+        for item in dados:
+            search_element.click()
+
+            search_element.send_keys(item[0])
+
+            contato = WebDriver.find_element(By.XPATH, '//*[@id="pane-side"]/div[1]/div/div/div[10]/div/div/div')
+
+            contato.click()
+
+
 
     except Exception as e:
         print(f'Erro: {e}')
 
     time.sleep(5)
-    print(caminho_arquivo)
 
 
 criar_interface()
